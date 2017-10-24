@@ -5,7 +5,7 @@ python + yahoo
 
 ### Yahoo Stuff
 
-To register your app with yahoo (to get the consumer key/secret) you can go [here](https://developer.yahoo.com/apps/create/). You'll need a domain to register a web app - I'm just using a desktop app for now while I test this so I can just run it from the command line.
+To register your app with yahoo (to get the consumer key/secret) you can go [here](https://developer.yahoo.com/apps/create/). You'll need a domain to register a web app. I'm just using a desktop app for now while I test this so I can just run it from the command line.
 
 [Yahoo Sports API documentation](https://developer.yahoo.com/fantasysports/guide/GettingStarted.html)
 
