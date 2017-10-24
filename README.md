@@ -21,11 +21,13 @@ To register your app with yahoo (to get the consumer key/secret) you can go [her
 
 # Usage
 
-1) Follow the steps for setting up the auth.json file in the yahoo_oauth documentation. You just need to send an initial request and it'll prompt you to visit some yahoo site, click some button, then your auth.json file should be populated and look similar to the one im already using
+1) Register your app with yahoo by following the link up in `Yahoo Stuff`
 
-2) Once your auth.json file looks pretty, you can create a json file with the league / team ID corresponding to a yahoo account you own (my trial run was with saucebauce.json). Or you could do something else, this is just how I'm doing it
+2) Follow the steps for setting up the auth.json file in the yahoo_oauth documentation. You just need to send an initial request and it'll prompt you to visit some yahoo site, click some button, then your auth.json file should be populated and look similar to the one im already using
 
-3) If you in fact did not do something else and followed #2, all you need to do to use the ApiHelper is:
+3) Once your auth.json file looks pretty, you can create a json file with the league / team ID corresponding to a yahoo account you own (my trial run was with saucebauce.json). Or you could do something else, this is just how I'm doing it
+
+4) If you in fact did not do something else and followed #2, all you need to do to use the ApiHelper is:
 
 ```
 oauth = OAuth2(None, None, from_file='../auth.json')
