@@ -1,5 +1,4 @@
 from yahoo_oauth import OAuth2
-import json
 import xml.etree.ElementTree as ET
 
 #idk why but when using this library this stupid thing is prefixed to each xml tag
