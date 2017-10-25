@@ -25,16 +25,14 @@ To register your app with yahoo (to get the consumer key/secret) you can go [her
 
 2) Follow the steps for setting up the auth.json file in the yahoo_oauth documentation. You just need to send an initial request and it'll prompt you to visit some yahoo site, click some button, then your auth.json file should be populated and look similar to the one im already using
 
-3) Once your auth.json file looks pretty, you can create a json file with the league / team ID corresponding to a yahoo account you own (my trial run was with saucebauce.json). Or you could do something else, this is just how I'm doing it
-
-4) If you in fact did not do something else and followed #2, all you need to do to use the ApiHelper is:
+3) If you're writing another module that uses ApiHelper within this project, you can use it like so:
 
 ```
-oauth = OAuth2(None, None, from_file='../auth.json')
-api = ApiHelper("saucebauce",oauth)
+from v1 import ApiHelper
+api = ApiHelper("../auth.json", 136131, 1)
 ```
 
-and you're ready to start fetching some xml.
+where 136131 and 1 are a valid leagueId and teamId corresponding to a yahoo account whose app credentials live in auth.json. These two numbers are https://basketball.fantasysports.yahoo.com/nba/{leagueId}/{teamId} when you click "My Team" in one of the yahoo fantasy leagues you're in.
 
 # Note
 I haven't written in anything but java in years, so this code probably looks pretty stupid if you're used to something scriptier like python - for example I'm checking every single response with an exception-handling-wrapper method (ok_get), and that feels pretty retarded. There's a lot of refactoring that'll need to be done here and I'll get to it eventually as I get re-familiarized with python, so bear with me
