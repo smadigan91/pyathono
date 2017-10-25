@@ -97,7 +97,6 @@ class ApiHelper:
     #TODO convenience APIs
 
 #testing
-oauth = OAuth2(None, None, from_file='../saucebauce.json')
 api = ApiHelper("saucebauce")
 # api.fetch_league()
 # api.fetch_team()
