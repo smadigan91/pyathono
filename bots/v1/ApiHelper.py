@@ -32,12 +32,11 @@ class ApiHelper:
     base_team_url = "https://fantasysports.yahooapis.com/fantasy/v2/team/nba"
     base_player_url = "https://fantasysports.yahooapis.com/fantasy/v2/player/"
     
-    def __init__(self, jsonFileName):
-        self.user_props = json.loads(open('../' + jsonFileName).read())
-        self.league_id = self.user_props["league_id"]
-        self.team_id = self.user_props["team_id"]
+    def __init__(self, authFileName, leagueId, teamId):
+        self.league_id = leagueId
+        self.team_id = teamId
         self.base_league_url += self.league_idt.format(lid=self.league_id)
-        self.req = OAuth2(None, None, from_file='../' + jsonFileName).session
+        self.req = OAuth2(None, None, from_file=authFileName).session
         
     #TODO return convenient data structures
     
@@ -95,7 +94,7 @@ class ApiHelper:
     #TODO convenience APIs
 
 #testing
-api = ApiHelper("auth.json")
+api = ApiHelper("../auth.json", 136131, 1)
 # api.fetch_league()
 # api.fetch_team()
 # api.fetch_roster()
