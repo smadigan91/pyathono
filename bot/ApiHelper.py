@@ -33,6 +33,12 @@ def ok_get(response):
 
 class ApiHelper:
     
+    #league metadata
+    l_meta = {
+        "num_teams": 0,
+        "num_pos": 0
+        }
+    
     def __init__(self, authFileName, leagueId, teamId):
         self.league_id = leagueId
         self.team_id = teamId
@@ -40,10 +46,19 @@ class ApiHelper:
         
     #TODO return convenient data structures
     
-    def fetch_league(self, params={}):
+    def fetch_league(self):
         response = self.req.get(base_league_url.format(lid=self.league_id))
         ok_get(response)
         print(response.text)
+        
+    def index_league_metadata(self):
+        response = self.req.get(base_league_url.format(lid=self.league_id) + "/settings")
+        league_settings = ET.fromstring(response.text)
+        self.l_meta["num_teams"] = int(find_multi(league_settings, './league/num_teams').text)
+        for roster_position in find_multi(league_settings, './league/settings/roster_positions'):
+            if find(roster_position, 'position').text != "IL":
+                self.l_meta["num_pos"] +=  int(find(roster_position, 'count').text)
+        
     
     def fetch_team(self, tid=None, params={}):
         tid = tid if tid is not None else self.team_id
@@ -64,7 +79,7 @@ class ApiHelper:
         ok_get(response)
         players = ET.fromstring(response.text)
         ids = {}
-        for player in find_multi(players, './team/roster/players'): #0=root#13=roster3=players
+        for player in find_multi(players, './team/roster/players'):
             ids[find(player, 'name')[0].text] = find(player, 'player_key').text
         return ids
         
@@ -88,6 +103,9 @@ class ApiHelper:
         ok_get(response)
         print(response.text)
         
+#     def fetch_all_rosterable_players(self, num_teams, num_ros_spots):
+        #should fetch the top players by actual rank
+        
     def get_team_idt(self, tid):
         return team_idt.format(lid=self.league_id, tid=tid)
         
@@ -100,7 +118,8 @@ api = ApiHelper("../auth.json", 136131, 1)
 # api.fetch_roster()
 ids = api.fetch_roster_players()
 print(ids)
+api.index_league_metadata()
 # api.fetch_player_stats(list(ids.values())[0])
-api.fetch_player_stats_by_season(ids['Stephen Curry'], 2016)
+# api.fetch_player_stats_by_season(ids['Stephen Curry'], 2017)
 # api.fetch_players_stats(ids.values())
 # api.fetch_player_stats(ids[0])
