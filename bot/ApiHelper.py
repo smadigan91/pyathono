@@ -44,10 +44,14 @@ def find(element, search):
 def find_multi(element, search):
     return element.find(xmlp_multi(search))
 
+def find_all(element, search):
+    return element.findall(search.replace('//', '//{0}').format(xmlprefix))
+
 def ok_get(response):
         code = response.status_code
         if not code is 200:
             raise Exception("status code was {0}".format(code))
+        return response
 
 class ApiHelper:
     
@@ -65,17 +69,22 @@ class ApiHelper:
         
     #TODO return convenient data structures
     
+    def default_maxrank(self):
+        return self.l_meta["num_teams"]*self.l_meta["num_pos"]
+    
+    def get(self, url, params={}):
+        return ok_get(self.req.get(url, params=params))
+    
     '''
     LEAGUE
     '''
     
     def fetch_league(self):
-        response = self.req.get(l_url(self.league_id))
-        ok_get(response)
+        response = self.get(l_url(self.league_id))
         print(response.text)
         
     def index_league_metadata(self):
-        response = self.req.get(l_url(self.league_id) + "/settings")
+        response = self.get(l_url(self.league_id) + "/settings")
         league_settings = ET.fromstring(response.text)
         self.l_meta["num_teams"] = int(find_multi(league_settings, './league/num_teams').text)
         for roster_position in find_multi(league_settings, './league/settings/roster_positions'):
@@ -89,14 +98,12 @@ class ApiHelper:
     
     def fetch_team(self, tid=None, params={}):
         tid = tid if tid is not None else self.team_id
-        response = self.req.get(t_url(self.league_id, tid), params=params)
-        ok_get(response)
+        response = self.get(t_url(self.league_id, tid), params=params)
         print(response.text)
         
     def fetch_roster(self, tid=None, params={}):
         tid = tid if tid is not None else self.team_id
-        response = self.req.get(t_url(self.league_id, tid) + "/roster", params=params)
-        ok_get(response)
+        response = self.get(t_url(self.league_id, tid) + "/roster", params=params)
         print(response.text)
     
     '''
@@ -106,22 +113,19 @@ class ApiHelper:
     # map of {player_name : player_key}
     def fetch_roster_players(self, tid=None, params={}):
         tid = tid if tid is not None else self.team_id
-        response = self.req.get(t_url(self.league_id, tid) + "/roster/players", params=params)
-        ok_get(response)
+        response = self.get(t_url(self.league_id, tid) + "/roster/players", params=params)
         players = ET.fromstring(response.text)
         ids = {}
-        for player in find_multi(players, './team/roster/players'):
+        for player in find_all(players, './/player'):
             ids[find(player, 'name')[0].text] = find(player, 'player_key').text
         return ids
         
     def fetch_player_stats(self, player_key, params={}):
-        response = self.req.get(p_url(player_key) + "/stats",params=params)
-        ok_get(response)
+        response = self.get(p_url(player_key) + "/stats",params=params)
         print(response.text)
         
     def fetch_player_stats_by_season(self, player_key, season, params={}):
-        response = self.req.get(p_url(player_key) + "/stats;type=season;season={0}".format(season),params=params)
-        ok_get(response)
+        response = self.get(p_url(player_key) + "/stats;type=season;season={0}".format(season),params=params)
         print(response.text)
         
     def fetch_players_stats(self, player_keys = [], params = {}):
@@ -130,20 +134,31 @@ class ApiHelper:
             pks += pk + ","
         pks = pks[:-1] + ";"
         print(ps_url(self.league_id) + "player_keys=" + pks + "out=stats")
-        response = self.req.get(base_league_url + "/players;player_keys=" + pks + "out=stats",params=params)
-        ok_get(response)
+        response = self.get(base_league_url + "/players;player_keys=" + pks + "out=stats",params=params)
         print(response.text)
-        
-    def fetch_players(self, params = {}):
-        url = ps_url(self.league_id)
+    
+    #count is separate
+    def fetch_players(self, params = {}, count=None):
+        start = 0
+        count = count if (count is not None or count <=1) else 25
+        url = ps_url(self.league_id) + "start={0};count={1};"
         for k, v in params.items():
-            url += k + "=" + v + ";"
+            url += k + "=" + str(v) + ";"
         url = url[:-1]#trim last ;
-        print(url)
-        response = self.req.get(url)
-        ok_get(response)
-        return response.text
         
+        response = self.get(url.format(start, 25 if count > 25 else count))
+        players = find_all(ET.fromstring(response.text), './/player')
+        
+        while count > 25:
+            start +=25
+            count -=25
+            response = self.get(url.format(start, 25 if count > 25 else count))
+            players.extend(find_all(ET.fromstring(response.text), './/player'))
+        
+        return players
+        
+                
+            
 #     def fetch_all_rosterable_players(self, num_teams, num_ros_spots):
         #should fetch the top players by actual rank
         
@@ -156,7 +171,7 @@ api = ApiHelper("../auth.json", 136131, 1)
 # api.fetch_roster()
 ids = api.fetch_roster_players()
 print(ids)
-print(api.fetch_players({"status":"ALL", "sort":"AR"}))
+print(len(api.fetch_players({"status":"ALL", "sort":"AR"}, 73)))
 # api.fetch_player_stats(list(ids.values())[0])
 # api.fetch_player_stats_by_season(ids['Stephen Curry'], 2017)
 # api.fetch_players_stats(ids.values())
