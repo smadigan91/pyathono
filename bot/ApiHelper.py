@@ -13,6 +13,30 @@ base_player_url = base_url + "/player/"
 base_players_url = base_url + "/players"
 base_league_players_url = base_league_url + "/players;" #assumes params
 
+all_cats = [
+    "AR",
+    "NAME",
+    "PKEY",
+    "GP",
+    "FGA",
+    "FGM",
+    "FG%",
+    "FTA",
+    "FTM",
+    "FT%",
+    "3PA",
+    "3PM",
+    "3P%",
+    "PTS",
+    "REB",
+    "AST",
+    "STL",
+    "BLK",
+    "TOV",
+    ]
+
+scoring_cats = [x for x in all_cats if x not in ["AR","NAME","PKEY","GP","3P%"]]
+
 #idk why but when using this library this stupid thing is prefixed to each xml tag
 xmlprefix = "{http://fantasysports.yahooapis.com/fantasy/v2/base.rng}"
 
@@ -196,9 +220,9 @@ class Player:
     6 FTA    Free Throws Attempted
     7 FTM    Free Throws Made
     8 FT%    Free Throws Percentage
-    9 3PTA    3-point Shots Attempted
-    10 3PTM    3-point Shots Made
-    11 3PT%    3-point Shots Percentage
+    9 3PA    3-point Shots Attempted
+    10 3PM    3-point Shots Made
+    11 3PP    3-point Shots Percentage
     12 PTS    Points Scored
     13 OREB    Offensive Rebounds
     14 DREB    Defensive Rebounds
@@ -206,7 +230,7 @@ class Player:
     16 AST    Assists
     17 ST    Steals
     18 BLK    Blocked Shots
-    19 TO    Turnovers
+    19 TOV    Turnovers
     20 A/T    Assist/Turnover Ratio
     21 PF    Personal Fouls
     22 DISQ    Times Fouled Out
@@ -226,22 +250,21 @@ class Player:
             "GP": int(stats[0][1].text),
             "FGA": int(stats[3][1].text),
             "FGM": int(stats[4][1].text),
-            "FGP": format_pct(stats[5][1].text, 2),
+            "FG%": format_pct(stats[5][1].text, 3),
             "FTA": int(stats[6][1].text),
             "FTM": int(stats[7][1].text),
-            "FTP": format_pct(stats[8][1].text, 2),
-            "TPA": int(stats[9][1].text),
-            "TPM": int(stats[10][1].text),
-            "TPP": format_pct(stats[11][1].text, 2),
+            "FT%": format_pct(stats[8][1].text, 3),
+            "3PA": int(stats[9][1].text),
+            "3PM": int(stats[10][1].text),
+            "3P%": format_pct(stats[11][1].text, 3),
             "PTS": int(stats[12][1].text),
             "REB": int(stats[15][1].text),
             "AST": int(stats[16][1].text),
             "STL": int(stats[17][1].text),
             "BLK": int(stats[18][1].text),
-            "TOV": int(stats[19][1].text),
-            "ASTO": format_pct(stats[20][1].text, 2)
+            "TOV": int(stats[19][1].text)
             }
-        self.pg_stats = {k: self.div_gp(v) for k, v in self.stats.items() if k not in  ["AR","NAME","PKEY","GP","FGP","FTP","TPP","ASTO"]}
+        self.pg_stats = {k: self.div_gp(v) for k, v in self.stats.items() if k in scoring_cats}
         
     def get(self, stat):
         return self.stats[stat]
@@ -251,29 +274,29 @@ class Player:
         for stat in stats :
             results[stat] = self.stats[stat]
         
-    def get_pg_stat(self, stat, prec=3):
-        return self.div_gp(self.stats[stat], prec)
+    def get_pg_stat(self, stat):
+        return self.pg_stats[stat]
     
-    def get_pg_stats(self, stats = [], prec=3):
-        results = {}
-        for stat in stats:
-            results[stat] = self.div_gp(self.stats[stat], prec)
-        return results
+    def get_pg_stats(self, stats = []):
+        return {k:v for k, v in self.pg_stats.items() if k in stats}
+    
+    def get_total_stats(self):
+        return {k:v for k, v in self.stats.items() if k in scoring_cats}
     
     def div_gp(self, stat, prec=3):
-        return round(float(stat / self.stats["GP"]),prec)
+        return round(float(stat / self.stats["GP"]),prec) if isinstance(stat, int) else stat
         
     def pretty_print(self):
         print(', '.join("%s: %s" % item for item in self.stats.items()))
     
     def print_all_pg_stats(self):
-        print("AR: " + str(self.stats["AR"]) + ", NAME: " + self.stats["NAME"] + ", " + ', '.join("%s: %s" % item for item in self.pg_stats.items()))
+        print(', '.join("%s: %s" % item for item in self.pg_stats.items()))
     
 
 #testing
 api = ApiHelper("../auth.json", 136131, 1)
-for player in api.fetch_players({"status":"ALL", "sort":"AR"}, 150):
-    player.print_all_pg_stats()
+# for player in api.fetch_players({"status":"ALL", "sort":"AR"}, 150):
+#     player.pretty_print()
     
 
 # ids = api.fetch_roster_players()
