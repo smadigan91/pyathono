@@ -286,6 +286,10 @@ class Player:
     def get_total_stats(self):
         return {k:v for k, v in self.total_stats.items() if k in scoring_cats}
     
+    def get_scored_stats(self, omit, weights=[]):
+        map = {k:v for k, v in self.stdev_map.items() if k not in omit} if not self.score_map else {k:v for k, v in self.score_map.items() if k in weights}
+        return {k:v for k, v in map.items()}
+    
     def div_gp(self, stat, prec=3):
         return round(float(stat / self.total_stats["GP"]),prec) if isinstance(stat, int) else stat
         

@@ -73,14 +73,14 @@ def rank_players(players, stats=[], weights={}, pergame=True):
 def rank_and_print_players(players, stats=[], weights={}, pergame=True, topRank=None):
     topRank = 50 if topRank is None else topRank
     score_map = rank_players(players, stats, weights, pergame)
-    pretty_print_player_map(score_map, topRank) # return something eventrually
+    pretty_print_player_map(score_map, weights, topRank) # return something eventrually
     
     
-def pretty_print_player_map(player_map, top):
+def pretty_print_player_map(player_map, weights, top):
     rank=0
     for player in player_map.keys() :
         rank+=1
-        player.pretty_print_rank_name_only(rank)#(player.stdev_map if not player.score_map else player.score_map, rank)
+        player.pretty_print(player.get_scored_stats(util_cats, weights), rank)
         if rank == top: break
     
     
