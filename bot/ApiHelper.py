@@ -93,10 +93,7 @@ class ApiHelper:
     def __init__(self, authFileName, leagueId, teamId):
         self.league_id = leagueId
         self.team_id = teamId
-        self.oauth = OAuth2(None, None, from_file=authFileName)
-        if not self.oauth.token_is_valid():
-            self.oauth.refresh_access_token()
-        self.req = self.oauth.session
+        self.req = OAuth2(None, None, from_file=authFileName).session
         self.index_league_metadata()
         
     #TODO return convenient data structures
