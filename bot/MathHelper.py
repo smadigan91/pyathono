@@ -68,7 +68,12 @@ def rank_players(players, stats=[], weights={}, pergame=True):
         simple_eval_player(player, stats) if not weights else weighted_eval_player(player, stdev_map, stats, weights)
         score_map[player] = player.score
     score_map = OrderedDict(sorted(score_map.items(), key=operator.itemgetter(1), reverse=True))
-    pretty_print_player_map(score_map, 100) # return something eventrually
+    return score_map
+
+def rank_and_print_players(players, stats=[], weights={}, pergame=True, topRank=None):
+    topRank = 50 if topRank is None else topRank
+    score_map = rank_players(players, stats, weights, pergame)
+    pretty_print_player_map(score_map, topRank) # return something eventrually
     
     
 def pretty_print_player_map(player_map, top):
