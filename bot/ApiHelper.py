@@ -243,7 +243,7 @@ class Player:
         self.NAME = find(player, 'name')[0].text
         self.PKEY = find(player, 'player_key').text
         stats = find_all(player, './/stat')
-        self.stats = {
+        self.total_stats = { #there might be a sexier way to do this but im lazy sorry
             "AR": rank,
             "NAME": self.NAME,
             "PKEY": self.PKEY,
@@ -264,15 +264,18 @@ class Player:
             "BLK": int(stats[18][1].text),
             "TOV": int(stats[19][1].text)
             }
-        self.pg_stats = {k: self.div_gp(v) for k, v in self.stats.items() if k in scoring_cats}
+        self.pg_stats = {k: self.div_gp(v) for k, v in self.total_stats.items() if k in scoring_cats}
+        self.stdev_map = {} #raw
+        self.score_map = {} #weighted
+        self.score = 0
         
     def get(self, stat):
-        return self.stats[stat]
+        return self.total_stats[stat]
     
     def get_stats(self, stats=[]):
         results = {}
         for stat in stats :
-            results[stat] = self.stats[stat]
+            results[stat] = self.total_stats[stat]
         
     def get_pg_stat(self, stat):
         return self.pg_stats[stat]
@@ -281,20 +284,16 @@ class Player:
         return {k:v for k, v in self.pg_stats.items() if k in stats}
     
     def get_total_stats(self):
-        return {k:v for k, v in self.stats.items() if k in scoring_cats}
+        return {k:v for k, v in self.total_stats.items() if k in scoring_cats}
     
     def div_gp(self, stat, prec=3):
-        return round(float(stat / self.stats["GP"]),prec) if isinstance(stat, int) else stat
+        return round(float(stat / self.total_stats["GP"]),prec) if isinstance(stat, int) else stat
         
-    def pretty_print(self):
-        print(', '.join("%s: %s" % item for item in self.stats.items()))
-    
-    def print_all_pg_stats(self):
-        print(', '.join("%s: %s" % item for item in self.pg_stats.items()))
-    
+    def pretty_print(self, stat_map, rank=None): 
+        print(((str(rank) + " ") if rank is not None else "") + ("("+str(self.get("AR"))+") " + self.get("NAME") + ", ") + (', '.join("%s: %s" % item for item in stat_map.items())) + ("" if self.score == 0 else (", SCORE: " + str(self.score))))
 
 #testing
-api = ApiHelper("../auth.json", 136131, 1)
+# api = ApiHelper("../auth.json", 136131, 1)
 # for player in api.fetch_players({"status":"ALL", "sort":"AR"}, 150):
 #     player.pretty_print()
     
