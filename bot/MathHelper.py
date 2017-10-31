@@ -80,7 +80,7 @@ def pretty_print_player_map(player_map, top):
     rank=0
     for player in player_map.keys() :
         rank+=1
-        player.pretty_print(player.stdev_map if not player.score_map else player.score_map, rank)
+        player.pretty_print_rank_name_only(rank)#(player.stdev_map if not player.score_map else player.score_map, rank)
         if rank == top: break
     
     

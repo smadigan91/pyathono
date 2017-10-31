@@ -295,6 +295,10 @@ class Player:
     def pretty_print(self, stat_map, rank=None): 
         print(((str(rank) + " ") if rank is not None else "") + ("("+str(self.get("AR"))+") " + self.get("NAME") + ", ") + (', '.join("%s: %s" % item for item in stat_map.items())) + ("" if self.score == 0 else (", SCORE: " + str(self.score))))
 
+    def pretty_print_rank_name_only(self, rank=None):
+        print(((str(rank) + " ") if rank is not None else "") + ("("+str(self.get("AR"))+") " + self.get("NAME") + ", ") + ("" if self.score == 0 else ("SCORE: " + str(self.score))))
+
+        
 #testing
 # api = ApiHelper("../auth.json", 136131, 1)
 # for player in api.fetch_players({"status":"ALL", "sort":"AR"}, 150):
