@@ -52,6 +52,7 @@ def weighted_eval_player(player, stdev_map, stats=[], weights={}):
     for cat, stdev in player.stdev_map.items():
         #try and weigh the scalar by the relative deviation for this cat
         scalar = 1-(stdev_map[cat][0]/total)
+        if cat == "BLK" : scalar = scalar/2 #blocks seem like they're being weighted a little heavily
         if weights:
             scalar *= weights[cat] if cat in weights else 1
             should_omit = (cat in weights and weights[cat] <= 0) or cat in util_cats #omit mades and attempts
