@@ -60,8 +60,8 @@ def weighted_eval_player(player, stdev_map, stats=[], weights={}):
             
         score = 0 if should_omit else stdev + (stdev * scalar)
         if cat == "TOV" : score = score*-1
-        score_map[cat] = round(score,2)
-        total_score += score
+        score_map[cat] = round(score/2,2)
+        total_score += round(score/2,2)
             
     player.score = round(total_score,2)
     player.score_map = score_map
