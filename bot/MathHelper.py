@@ -22,7 +22,7 @@ def all_player_stdev(players, stats=[], pergame=True):
         for stat in stats if stats else scoring_cats:
             stdv_mean_map[stat].append(player.get_pg_stat(stat) if pergame else player.get(stat))
     for stat, data in stdv_mean_map.items():
-        stdv_mean_map[stat] = [round(stdev(data),3),round(mean(data),3)]
+        stdv_mean_map[stat] = [round(stdev(data),5),round(mean(data),5)]
     return stdv_mean_map #for each stat, a tuple of the standard deviation and mean for the entire league
 
 def rel_stdev(player, stdv_mean_map, pergame=True):
@@ -31,35 +31,18 @@ def rel_stdev(player, stdv_mean_map, pergame=True):
         if pergame:
             player_stdev[stat] = round((player.get_pg_stat(stat) - dev_mean[1]) / dev_mean[0], 3)#TODO average per game stats
         else:
-            base = (player.get(stat) - dev_mean[1])
             if stat == "FG%":
                 base = (player.get(stat) - ideal_FGP)
-                player_stdev[stat] = round(base * player.get("FGA") * dev_mean[0],3)
+                player_stdev[stat] = round(base * player.get("FGA") * dev_mean[0],5)
             elif stat == "FT%":
                 base = (player.get(stat) - ideal_FTP)
-                player_stdev[stat] = round(base * player.get("FTA") * dev_mean[0],3)
+                player_stdev[stat] = round(base * player.get("FTA") * dev_mean[0],5)
             else :
-                player_stdev[stat] = round(base / dev_mean[0], 3)
+                player_stdev[stat] = round((player.get(stat) - dev_mean[1]) / dev_mean[0], 5)
     player.stdev_map = player_stdev #map of player stat cats to  player standard deviation relative to league per cat
 
 def simple_eval_player(player, stats=[]):
-    player.score = round(sum([val for key, val in player.stdev_map.items() if key not in util_cats]) - round(2*player.stdev_map["TOV"],3) if "TOV" in stats else 0, 3) #Turnovers are bad
-
-def simple_weighted_score(player, stdev_map, stats=[]):
-    stats = stats if not stats else scoring_cats
-    total_score = 0
-    score_map = {}
-    total = sum(x[0] for x in {k:v for k, v in stdev_map.items() if k not in util_cats}.values())
-    for cat, stdev in player.stdev_map.items():
-        #try and weigh the scalar by the amount of deviation
-        scalar = round((1-(stdev_map[cat][0]/total)),3)
-        should_omit = cat in util_cats
-        score = 0 if should_omit else stdev + (stdev * scalar)
-        if cat == "TOV" : score = score*-1
-        score_map[cat] = round(score,3)
-        total_score += score
-    player.score = round(total_score,3)
-    player.score_map = score_map
+    player.score = round(sum([val for key, val in player.stdev_map.items() if key not in util_cats]) - round(2*player.stdev_map["TOV"],3) if "TOV" in stats else 0, 5)
 
 def weighted_eval_player(player, stdev_map, stats=[], weights={}):
     stats = stats if not stats else scoring_cats
@@ -67,14 +50,19 @@ def weighted_eval_player(player, stdev_map, stats=[], weights={}):
     score_map = {}
     total = sum(x[0] for x in {k:v for k, v in stdev_map.items() if k not in util_cats}.values())
     for cat, stdev in player.stdev_map.items():
-        #try and weigh the scalar by the amount of deviation
-        normal_scalar = round((1-(stdev_map[cat][0]/total)),3)
-        scalar = normal_scalar if cat not in weights else round(weights[cat]  * (1-stdev_map[cat][0]/total),3)
-        should_omit = (cat in weights and weights[cat] <= 0) or cat in util_cats #omit mades and attempts
+        #try and weigh the scalar by the relative deviation for this cat
+        scalar = 1-(stdev_map[cat][0]/total)
+        if weights:
+            scalar *= weights[cat] if cat in weights else 1
+            should_omit = (cat in weights and weights[cat] <= 0) or cat in util_cats #omit mades and attempts
+        else :
+            should_omit = cat in util_cats
+            
         score = 0 if should_omit else stdev + (stdev * scalar)
         if cat == "TOV" : score = score*-1
-        score_map[cat] = round(score,3)
+        score_map[cat] = round(score,5)
         total_score += score
+            
     player.score = round(total_score,3)
     player.score_map = score_map
 
@@ -86,7 +74,7 @@ def rank_players(players, stats=[], weights={}, pergame=True):
     stdev_map = all_player_stdev(players, stats, pergame)
     for player in players:
         rel_stdev(player, stdev_map, pergame)
-        simple_weighted_score(player, stdev_map, stats) if not weights else weighted_eval_player(player, stdev_map, stats, weights)
+        weighted_eval_player(player, stdev_map, stats, weights)
         score_map[player] = player.score
     score_map = OrderedDict(sorted(score_map.items(), key=operator.itemgetter(1), reverse=True))
     return score_map
@@ -101,6 +89,6 @@ def pretty_print_player_map(player_map, weights, top):
     rank=0
     for player in player_map.keys() :
         rank+=1
-#         player.pretty_print(player.score_map, rank)
-        player.pretty_print_rank_name_only(rank)
+        player.pretty_print(player.score_map, rank)
+#         player.pretty_print_rank_name_only(rank)
         if rank == top: break
