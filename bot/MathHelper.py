@@ -12,7 +12,17 @@ util_cats = ["FGA","FGM","FTA","FTM","3PA"]
 #list of idealized values for calculation of relative stdev, ripping from bballmonster
 #they seem to help improve the rankings vs. using the league average in certain cases
 ideal_FGP = 0.474
-ideal_FTP = 0.813
+ideal_FTP = 0.810
+
+BLK_SCAL = 2
+REB_SCAL = 1.3
+FT_SCAL = 1.5
+FG_SCAL = 1.1
+TPM_SCAL = 2
+STL_SCAL = 2
+PTS_SCAL = 1.3
+AST_SCAL = 2.2
+TOV_SCAL = 2
 
 #calculate the standard deviation for a given set of players / set of stats
 #uses all of a particular kind of category by default
@@ -52,7 +62,15 @@ def weighted_eval_player(player, stdev_map, stats=[], weights={}):
     for cat, stdev in player.stdev_map.items():
         #try and weigh the scalar by the relative deviation for this cat
         scalar = 1-(stdev_map[cat][0]/total)
-        if cat == "BLK" : scalar = scalar/2 #blocks seem like they're being weighted a little heavily
+        if cat == "BLK" : scalar /= BLK_SCAL
+        elif cat == "REB" : scalar /= REB_SCAL
+        elif cat == "3PM" : scalar /= TPM_SCAL
+        elif cat == "STL" : scalar /= STL_SCAL
+        elif cat == "AST" : scalar /= AST_SCAL
+        elif cat == "TOV" : scalar /= TOV_SCAL
+        elif cat == "FT%" : scalar *= FT_SCAL
+        elif cat == "FG%" : scalar *= FG_SCAL
+        elif cat == "PTS" : scalar *= PTS_SCAL
         if weights:
             scalar *= weights[cat] if cat in weights else 1
             should_omit = (cat in weights and weights[cat] <= 0) or cat in util_cats #omit mades and attempts
