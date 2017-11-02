@@ -33,7 +33,7 @@ all_cats = [
     "AST",
     "STL",
     "BLK",
-    "TOV",
+    "TOV"
     ]
 
 scoring_cats = [x for x in all_cats if x not in ["AR","NAME","PKEY","GP","3P%"]]
@@ -330,8 +330,9 @@ class Player:
 
         
 #testing
-api = ApiHelper("../auth.json", 136131, 1)
-api.index_roster()
+# api = ApiHelper("../auth.json", 136131, 1)
+# api.index_roster()
+
 # for player in api.fetch_players({"status":"ALL", "sort":"AR"}, 150):
 #     player.pretty_print()
     
