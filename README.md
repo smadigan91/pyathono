@@ -59,5 +59,7 @@ The `dict` can be a mapping of categories to score weight. Punts are specified b
 
 The `boolean` in-between the dict and the number of players to print denotes whether or not the players should be evaluated by their per game values. Currently I don't have that implemented, so I'm just calling it with `False` every time, but that should be implemented shortly.
 
+Currently I'm executing everything in `brain.py`, which I'm using as my driver class, so feel free to do the same.
+
 # Note
 I haven't written in anything but java in years, so this code probably looks pretty stupid if you're used to something scriptier like python - for example I'm checking every single response with an exception-handling-wrapper method (ok_get), and that feels pretty retarded. There's a lot of refactoring that'll need to be done here and I'll get to it eventually as I get re-familiarized with python, so bear with me
