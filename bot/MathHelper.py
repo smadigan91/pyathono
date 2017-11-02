@@ -8,7 +8,7 @@ Created on Oct 14, 2017
 @author: Sean
 '''
 
-util_cats = ["FGA","FGM","FTA","FTM","3PA"]
+util_cats = ["FGA","FGM","FTA","FTM"]
 #list of idealized values for calculation of relative stdev, ripping from bballmonster
 #they seem to help improve the rankings vs. using the league average in certain cases
 ideal_FGP = 0.474

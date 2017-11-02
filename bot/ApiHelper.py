@@ -36,7 +36,7 @@ all_cats = [
     "TOV"
     ]
 
-scoring_cats = [x for x in all_cats if x not in ["AR","NAME","PKEY","GP","3P%"]]
+scoring_cats = [x for x in all_cats if x not in ["AR","NAME","PKEY","GP","3P%","3PA"]]
 
 #idk why but when using this library this stupid thing is prefixed to each xml tag
 xmlprefix = "{http://fantasysports.yahooapis.com/fantasy/v2/base.rng}"
