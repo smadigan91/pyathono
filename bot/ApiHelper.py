@@ -82,6 +82,9 @@ def ok_get(response):
 #return 0.0 if a % value isn't present
 def format_pct(xml_val, prec):
         return 0.0 if xml_val is "-" else round(float(xml_val), prec)
+    
+def format_stat(xml_val):
+    return 0 if (xml_val is None or xml_val == "-") else int(xml_val)
 
 class ApiHelper:
     
@@ -211,11 +214,17 @@ class ApiHelper:
                 players.append(find(player, 'player_key').text)
         
         return self.format_players(self.fetch_players_stats(players))
-        
+    
+    #only return players who have played games
     def format_players(self, xml_players):
+        all_players = []
         for index, xml_player in enumerate(xml_players):
-            xml_players[index] = Player(xml_player, index+1)
-        return xml_players
+            stats = find_all(xml_player, './/stat')
+            gp = format_stat(stats[0][1].text)
+            if gp > 0:
+                all_players.append(Player(xml_player, stats, index+1))
+#                 xml_players[index] = Player(xml_player, stats, index+1)
+        return all_players
             
 #     def fetch_all_rosterable_players(self, num_teams, num_ros_spots):
         #should fetch the top players by actual rank
@@ -252,33 +261,32 @@ class Player:
     24 EJCT    Ejections
     25 FF      Flagrant Fouls
     '''
-    def __init__(self, player, rank):
+    def __init__(self, player, stats, rank):
         self.AR = rank
         self.NAME = find(player, 'name')[0].text
         self.PKEY = find(player, 'player_key').text
-        stats = find_all(player, './/stat')
         self.total_stats = { #there might be a sexier way to do this but im lazy sorry
             "AR": rank,
             "NAME": self.NAME,
             "PKEY": self.PKEY,
             "GP": int(stats[0][1].text),
-            "FGA": int(stats[3][1].text),
-            "FGM": int(stats[4][1].text),
+            "FGA": format_stat(stats[3][1].text),
+            "FGM": format_stat(stats[4][1].text),
             "FG%": format_pct(stats[5][1].text, 3),
-            "FTA": int(stats[6][1].text),
-            "FTM": int(stats[7][1].text),
+            "FTA": format_stat(stats[6][1].text),
+            "FTM": format_stat(stats[7][1].text),
             "FT%": format_pct(stats[8][1].text, 3),
-            "3PA": int(stats[9][1].text),
-            "3PM": int(stats[10][1].text),
+            "3PA": format_stat(stats[9][1].text),
+            "3PM": format_stat(stats[10][1].text),
             "3P%": format_pct(stats[11][1].text, 3),
-            "PTS": int(stats[12][1].text),
-            "REB": int(stats[15][1].text),
-            "AST": int(stats[16][1].text),
-            "STL": int(stats[17][1].text),
-            "BLK": int(stats[18][1].text),
-            "TOV": int(stats[19][1].text)
+            "PTS": format_stat(stats[12][1].text),
+            "REB": format_stat(stats[15][1].text),
+            "AST": format_stat(stats[16][1].text),
+            "STL": format_stat(stats[17][1].text),
+            "BLK": format_stat(stats[18][1].text),
+            "TOV": format_stat(stats[19][1].text)
             }
-        self.pg_stats = {k: self.div_gp(v) for k, v in self.total_stats.items() if k in scoring_cats}
+        self.pg_stats = {k: (self.div_gp(v) if self.total_stats["GP"] > 0 else 0) for k, v in self.total_stats.items() if k in scoring_cats}
         self.stdev_map = {} #raw
         self.score_map = {} #weighted
         self.score = 0
