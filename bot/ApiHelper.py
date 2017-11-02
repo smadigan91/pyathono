@@ -1,5 +1,6 @@
 from yahoo_oauth import OAuth2
 import xml.etree.ElementTree as ET
+import itertools
 
 #find a better way to do uri templating lol this is gross v
 base_url = "https://fantasysports.yahooapis.com/fantasy/v2"
@@ -143,11 +144,24 @@ class ApiHelper:
     def fetch_roster_players(self, tid=None, params={}):
         tid = tid if tid is not None else self.team_id
         response = self.get(t_url(self.league_id, tid) + "/roster/players", params=params)
-        players = ET.fromstring(response.text)
-        ids = {}
-        for player in find_all(players, './/player'):
-            ids[find(player, 'name')[0].text] = find(player, 'player_key').text
-        return ids
+        print(response.text)
+        players = find_all(ET.fromstring(response.text), './/player')
+        return players
+    
+    def index_roster(self, tid=None, params={}):
+        tid = tid if tid is not None else self.team_id
+        player_map = {}
+        players = self.fetch_roster_players(tid, params)
+        for xml_player in players:
+            positions = []
+            for position in find_all(xml_player, './/position'):
+                positions.append(position.text)
+            player_map[find(xml_player, 'player_key').text] = positions
+        healthy_map = {k: v for k, v in player_map.items() if 'IL' not in v}
+        print(healthy_map)
+        
+    
+        
         
     def fetch_player_stats(self, player_key, params={}):
         response = self.get(p_url(player_key) + "/stats",params=params)
@@ -287,15 +301,15 @@ class Player:
         return {k:v for k, v in self.total_stats.items() if k in scoring_cats}
     
     def get_scored_stats(self, omit, weights=[]):
-        map = {}
+        score_map = {}
         if not self.score_map:
-            map = {k:v for k, v in self.stdev_map.items() if k not in omit}
+            score_map = {k:v for k, v in self.stdev_map.items() if k not in omit}
         else:
             if not weights:
-                map = {k:v for k, v in self.score_map.items() if k not in omit}
+                score_map = {k:v for k, v in self.score_map.items() if k not in omit}
             else:
-                map = {k:v for k, v in self.score_map.items() if k in weights}
-        return {k:v for k, v in map.items()}
+                score_map = {k:v for k, v in self.score_map.items() if k in weights}
+        return {k:v for k, v in score_map.items()}
     
     def div_gp(self, stat, prec=3):
         return round(float(stat / self.total_stats["GP"]),prec) if isinstance(stat, int) else stat
@@ -308,12 +322,13 @@ class Player:
 
         
 #testing
-# api = ApiHelper("../auth.json", 136131, 1)
+api = ApiHelper("../auth.json", 136131, 1)
+api.index_roster()
 # for player in api.fetch_players({"status":"ALL", "sort":"AR"}, 150):
 #     player.pretty_print()
     
 
-# ids = api.fetch_roster_players()
+# ids = api.fetch_roster_player_ids()
 # print(ids)
 # api.fetch_player_stats(list(ids.values())[0])
 # api.fetch_player_stats_by_season(ids['Stephen Curry'], 2017)
