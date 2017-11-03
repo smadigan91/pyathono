@@ -6,16 +6,16 @@ import operator
 util_cats = ["FGA","FGM","FTA","FTM"]
 #list of idealized values for calculation of relative stdev, ripping from bballmonster
 #they seem to help improve the rankings vs. using the league average in certain cases
-ideal_FGP = 0.474
-ideal_FTP = 0.813
+ideal_FGP = 0.472
+ideal_FTP = 0.805
 
 BLK_SCAL = 2
 REB_SCAL = 1.3
 FT_SCAL = 1.5
 FG_SCAL = 1.1
 TPM_SCAL = 2
-STL_SCAL = 2
-PTS_SCAL = 1.3
+STL_SCAL = 1.8
+PTS_SCAL = 1.1
 AST_SCAL = 2.2
 TOV_SCAL = 2
 
