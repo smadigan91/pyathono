@@ -286,14 +286,19 @@ class Player:
             "TOV": format_stat(stats[19][1].text)
             }
         self.pg_stats = {k: (self.div_gp(v) if self.total_stats["GP"] > 0 else 0) for k, v in self.total_stats.items() if k in scoring_cats}
-        self.stdev_map = {} #raw
-        self.score_map = {"OVR":0} #weighted
+        self.total_stdev_map = {} #raw
+        self.total_score_map = {"OVR":0} #weighted
+        self.pg_stdev_map = {}
+        self.pg_score_map = {"OVR":0} #weighted
         
     def get(self, stat):
         return self.total_stats[stat]
     
-    def get_score(self):
-        return self.score_map["OVR"]
+    def get_score(self, pergame=True):
+        return self.pg_score_map["OVR"] if pergame else self.total_score_map["OVR"]
+    
+    def get_score_map(self, pergame=True):
+        return self.pg_score_map if pergame else self.total_score_map
     
     def get_stats(self, stats=[]):
         results = {}
@@ -309,16 +314,26 @@ class Player:
     def get_total_stats(self):
         return {k:v for k, v in self.total_stats.items() if k in scoring_cats}
     
-    def get_scored_stats(self, omit, weights=[]):
+    def get_scored_stats(self, omit, weights=[], pergame=True):
         score_map = {}
-        if not self.score_map:
-            score_map = {k:v for k, v in self.stdev_map.items() if k not in omit}
-        else:
-            if not weights:
-                score_map = {k:v for k, v in self.score_map.items() if k not in omit}
+        if pergame:
+            if not self.pg_score_map:
+                score_map = {k:v for k, v in self.pg_stdev_map.items() if k not in omit}
             else:
-                score_map = {k:v for k, v in self.score_map.items() if k in weights}
+                if not weights:
+                    score_map = {k:v for k, v in self.pg_score_map.items() if k not in omit}
+                else:
+                    score_map = {k:v for k, v in self.pg_score_map.items() if k in weights}
+        else:
+            if not self.total_score_map:
+                score_map = {k:v for k, v in self.total_stdev_map.items() if k not in omit}
+            else:
+                if not weights:
+                    score_map = {k:v for k, v in self.total_score_map.items() if k not in omit}
+                else:
+                    score_map = {k:v for k, v in self.total_score_map.items() if k in weights}
         return {k:v for k, v in score_map.items()}
+        
     
     def div_gp(self, stat, prec=3):
         return round(float(stat / self.total_stats["GP"]),prec) if isinstance(stat, int) else stat
@@ -326,13 +341,13 @@ class Player:
     def pretty_print(self, stat_map, rank=None): 
         print(((str(rank) + " ") if rank is not None else "") + ("("+str(self.get("AR"))+") " + self.get("NAME") + ", ") + (', '.join("%s: %s" % item for item in stat_map.items())))
 
-    def pretty_print_rank_name_only(self, rank=None):
-        print(((str(rank) + " ") if rank is not None else "") + ("("+str(self.get("AR"))+") " + self.get("NAME") + ", ") + ("" if self.get_score() == 0 else ("OVR: " + str(self.get_score()))))
+    def pretty_print_rank_name_only(self, rank=None, pergame=True):
+        print(((str(rank) + " ") if rank is not None else "") + ("("+str(self.get("AR"))+") " + self.get("NAME") + ", ") + ("" if self.get_score(pergame) == 0 else ("OVR: " + str(self.get_score(pergame)))))
 
         
 #testing
-# api = ApiHelper("../auth.json", 136131, 1)
-# api.index_roster()
+api = ApiHelper("../auth.json", 136131, 1)
+api.index_roster()
 
 # for player in api.fetch_players({"status":"ALL", "sort":"AR"}, 150):
 #     player.pretty_print()
