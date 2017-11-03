@@ -2,17 +2,12 @@ from ApiHelper import ApiHelper, scoring_cats
 from statistics import stdev, mean
 from collections import defaultdict, OrderedDict
 import operator
-'''
-Created on Oct 14, 2017
-
-@author: Sean
-'''
 
 util_cats = ["FGA","FGM","FTA","FTM"]
 #list of idealized values for calculation of relative stdev, ripping from bballmonster
 #they seem to help improve the rankings vs. using the league average in certain cases
 ideal_FGP = 0.474
-ideal_FTP = 0.810
+ideal_FTP = 0.813
 
 BLK_SCAL = 2
 REB_SCAL = 1.3
@@ -30,7 +25,10 @@ def all_player_stdev(players, stats=[], pergame=True):
     stdv_mean_map = defaultdict(list)
     for player in players : 
         for stat in stats if stats else scoring_cats:
-            stdv_mean_map[stat].append(player.get_pg_stat(stat) if pergame else player.get(stat))
+            if pergame :
+                if stat in ["FG%","FT%"]: stdv_mean_map[stat].append(player.get(stat))
+                else: stdv_mean_map[stat].append(player.get_pg_stat(stat))
+            else: stdv_mean_map[stat].append(player.get(stat))
     for stat, data in stdv_mean_map.items():
         stdv_mean_map[stat] = [round(stdev(data),5),round(mean(data),5)]
     return stdv_mean_map #for each stat, a tuple of the standard deviation and mean for the entire league
@@ -39,7 +37,14 @@ def rel_stdev(player, stdv_mean_map, pergame=True):
     player_stdev = defaultdict(list)
     for stat, dev_mean in stdv_mean_map.items():
         if pergame:
-            player_stdev[stat] = round((player.get_pg_stat(stat) - dev_mean[1]) / dev_mean[0], 3)#TODO average per game stats
+            if stat == "FG%":
+                base = (player.get(stat) - ideal_FGP)
+                player_stdev[stat] = round(base * player.get("FGA") * dev_mean[0],5)
+            elif stat == "FT%":
+                base = (player.get(stat) - ideal_FTP)
+                player_stdev[stat] = round(base * player.get("FTA") * dev_mean[0],5)
+            else :
+                player_stdev[stat] = round((player.get_pg_stat(stat) - dev_mean[1]) / dev_mean[0], 3)
         else:
             if stat == "FG%":
                 base = (player.get(stat) - ideal_FGP)
@@ -81,8 +86,8 @@ def weighted_eval_player(player, stdev_map, stats=[], weights={}):
         if cat == "TOV" : score = score*-1
         score_map[cat] = round(score/2,2)
         total_score += round(score/2,2)
-    player.score = round(total_score,2)
     player.score_map = score_map
+    player.score_map["OVR"] = round(total_score,2)
 
 
 #just sums the standard deviations for whatever stats are given
@@ -93,17 +98,18 @@ def rank_players(players, stats=[], weights={}, pergame=True):
     for player in players:
         rel_stdev(player, stdev_map, pergame)
         weighted_eval_player(player, stdev_map, stats, weights)
-        score_map[player] = player.score
+        score_map[player] = player.get_score()
     score_map = OrderedDict(sorted(score_map.items(), key=operator.itemgetter(1), reverse=True))
     return score_map
 
+#should index: {player_key : score} and {player_key : score_map}
 def rank_and_print_players(players, stats=[], weights={}, pergame=True, topRank=None):
     topRank = 50 if topRank is None else topRank
     score_map = rank_players(players, stats, weights, pergame)
-    pretty_print_player_map(score_map, weights, topRank) # return something eventually
+    pretty_print_player_map(score_map, topRank) # return something eventually
     
     
-def pretty_print_player_map(player_map, weights, top):
+def pretty_print_player_map(player_map, top):
     rank=0
     for player in player_map.keys() :
         rank+=1

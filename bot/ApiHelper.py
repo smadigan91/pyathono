@@ -1,6 +1,5 @@
 from yahoo_oauth import OAuth2
 import xml.etree.ElementTree as ET
-import itertools
 
 #find a better way to do uri templating lol this is gross v
 base_url = "https://fantasysports.yahooapis.com/fantasy/v2"
@@ -288,11 +287,13 @@ class Player:
             }
         self.pg_stats = {k: (self.div_gp(v) if self.total_stats["GP"] > 0 else 0) for k, v in self.total_stats.items() if k in scoring_cats}
         self.stdev_map = {} #raw
-        self.score_map = {} #weighted
-        self.score = 0
+        self.score_map = {"OVR":0} #weighted
         
     def get(self, stat):
         return self.total_stats[stat]
+    
+    def get_score(self):
+        return self.score_map["OVR"]
     
     def get_stats(self, stats=[]):
         results = {}
@@ -323,10 +324,10 @@ class Player:
         return round(float(stat / self.total_stats["GP"]),prec) if isinstance(stat, int) else stat
         
     def pretty_print(self, stat_map, rank=None): 
-        print(((str(rank) + " ") if rank is not None else "") + ("("+str(self.get("AR"))+") " + self.get("NAME") + ", ") + (', '.join("%s: %s" % item for item in stat_map.items())) + ("" if self.score == 0 else (", SCORE: " + str(self.score))))
+        print(((str(rank) + " ") if rank is not None else "") + ("("+str(self.get("AR"))+") " + self.get("NAME") + ", ") + (', '.join("%s: %s" % item for item in stat_map.items())))
 
     def pretty_print_rank_name_only(self, rank=None):
-        print(((str(rank) + " ") if rank is not None else "") + ("("+str(self.get("AR"))+") " + self.get("NAME") + ", ") + ("" if self.score == 0 else ("SCORE: " + str(self.score))))
+        print(((str(rank) + " ") if rank is not None else "") + ("("+str(self.get("AR"))+") " + self.get("NAME") + ", ") + ("" if self.get_score() == 0 else ("OVR: " + str(self.get_score()))))
 
         
 #testing
