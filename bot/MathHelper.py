@@ -7,17 +7,17 @@ util_cats = ["FGA","FGM","FTA","FTM"]
 #list of idealized values for calculation of relative stdev, ripping from bballmonster
 #they seem to help improve the rankings vs. using the league average in certain cases
 ideal_FGP = 0.472
-ideal_FTP = 0.805
+ideal_FTP = 0.802
 
-BLK_SCAL = 2
+BLK_SCAL = 2.3
 REB_SCAL = 1.3
-FT_SCAL = 1.5
+FT_SCAL = 1.2
 FG_SCAL = 1.1
-TPM_SCAL = 2
+TPM_SCAL = 1.1
 STL_SCAL = 1.8
-PTS_SCAL = 1.1
+PTS_SCAL = 2.8
 AST_SCAL = 2.2
-TOV_SCAL = 2
+TOV_SCAL = 1.2
 
 class MathHelper:
     
@@ -54,6 +54,9 @@ class MathHelper:
                 elif stat == "FT%":
                     base = (player.get(stat) - ideal_FTP)
                     player_stdev[stat] = round(base * player.get("FTA") * dev_mean[0],5)
+                elif stat == "PTS":
+                    base = (player.get_pg_stat(stat) - dev_mean[1]*2)
+                    player_stdev[stat] = round(base / dev_mean[0], 3)
                 else :
                     player_stdev[stat] = round((player.get_pg_stat(stat) - dev_mean[1]) / dev_mean[0], 3)
             else:
@@ -63,6 +66,9 @@ class MathHelper:
                 elif stat == "FT%":
                     base = (player.get(stat) - ideal_FTP)
                     player_stdev[stat] = round(base * player.get("FTA") * dev_mean[0],5)
+                elif stat == "PTS" or stat == "3PM" or stat == "TOV":
+                    base = (player.get(stat) - dev_mean[1]*2)
+                    player_stdev[stat] = round(base / dev_mean[0], 3)
                 else :
                     player_stdev[stat] = round((player.get(stat) - dev_mean[1]) / dev_mean[0], 5)
         if pergame: player.pg_stdev_map = player_stdev #map of player stat cats to  player standard deviation relative to league per cat
