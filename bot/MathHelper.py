@@ -9,10 +9,10 @@ util_cats = ["FGA","FGM","FTA","FTM"]
 ideal_FGP = 0.472
 ideal_FTP = 0.802
 
-BLK_SCAL = 2.3
+BLK_SCAL = 3.0
 REB_SCAL = 1.3
 FT_SCAL = 1.2
-FG_SCAL = 1.1
+FG_SCAL = 1.5
 TPM_SCAL = 1.1
 STL_SCAL = 1.8
 PTS_SCAL = 2.8
@@ -91,8 +91,8 @@ class MathHelper:
             elif cat == "STL" : scalar /= STL_SCAL
             elif cat == "AST" : scalar /= AST_SCAL
             elif cat == "TOV" : scalar /= TOV_SCAL
+            elif cat == "FG%" : scalar /= FG_SCAL
             elif cat == "FT%" : scalar *= FT_SCAL
-            elif cat == "FG%" : scalar *= FG_SCAL
             elif cat == "PTS" : scalar *= PTS_SCAL
             if weights:
                 scalar *= weights[cat] if cat in weights else 1
