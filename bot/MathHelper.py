@@ -7,17 +7,17 @@ util_cats = ["FGA","FGM","FTA","FTM"]
 #list of idealized values for calculation of relative stdev, ripping from bballmonster
 #they seem to help improve the rankings vs. using the league average in certain cases
 ideal_FGP = 0.472
-ideal_FTP = 0.802
+ideal_FTP = 0.797
 
-BLK_SCAL = 3.0
+BLK_SCAL = 1.9
 REB_SCAL = 1.3
-FT_SCAL = 1.2
+FT_SCAL = 1.12
 FG_SCAL = 1.5
-TPM_SCAL = 1.1
-STL_SCAL = 1.8
-PTS_SCAL = 2.8
-AST_SCAL = 2.2
-TOV_SCAL = 1.2
+TPM_SCAL = 1.25
+STL_SCAL = 1.2
+PTS_SCAL = 2.4
+AST_SCAL = 1.15
+TOV_SCAL = 1.1
 
 class MathHelper:
     
@@ -50,12 +50,27 @@ class MathHelper:
             if pergame:
                 if stat == "FG%":
                     base = (player.get(stat) - ideal_FGP)
-                    player_stdev[stat] = round(base * player.get("FGA") * dev_mean[0],5)
+                    player_stdev[stat] = round(base * player.get_pg_stat("FGA") * 1.7,5)
                 elif stat == "FT%":
                     base = (player.get(stat) - ideal_FTP)
-                    player_stdev[stat] = round(base * player.get("FTA") * dev_mean[0],5)
+                    player_stdev[stat] = round(base * player.get_pg_stat("FTA") * 3.2,5)
+                elif stat == "3PM":
+                    base = (player.get_pg_stat(stat) - dev_mean[1]*1.8)
+                    player_stdev[stat] = round(base / dev_mean[0], 3)
                 elif stat == "PTS":
-                    base = (player.get_pg_stat(stat) - dev_mean[1]*2)
+                    base = (player.get_pg_stat(stat) - dev_mean[1]*1.85)
+                    player_stdev[stat] = round(base / dev_mean[0], 3)
+                elif stat == "AST":
+                    base = (player.get_pg_stat(stat) - dev_mean[1]*1.85)
+                    player_stdev[stat] = round(base / dev_mean[0], 3)
+                elif stat == "TOV":
+                    base = (player.get_pg_stat(stat) - dev_mean[1]*1.75)
+                    player_stdev[stat] = round(base / dev_mean[0], 3)
+                elif stat == "STL":
+                    base = (player.get_pg_stat(stat) - dev_mean[1]*1.7)
+                    player_stdev[stat] = round(base / dev_mean[0], 3)
+                elif stat == "BLK":
+                    base = (player.get_pg_stat(stat) - dev_mean[1]*1.6)
                     player_stdev[stat] = round(base / dev_mean[0], 3)
                 else :
                     player_stdev[stat] = round((player.get_pg_stat(stat) - dev_mean[1]) / dev_mean[0], 3)
@@ -66,8 +81,23 @@ class MathHelper:
                 elif stat == "FT%":
                     base = (player.get(stat) - ideal_FTP)
                     player_stdev[stat] = round(base * player.get("FTA") * dev_mean[0],5)
-                elif stat == "PTS" or stat == "3PM" or stat == "TOV":
-                    base = (player.get(stat) - dev_mean[1]*2)
+                elif stat == "3PM":
+                    base = (player.get(stat) - dev_mean[1]*1.8) #the hard-coded scalars here slightly amplify the league average for this cat
+                    player_stdev[stat] = round(base / dev_mean[0], 3)
+                elif stat == "PTS":
+                    base = (player.get(stat) - dev_mean[1]*1.85) #idk why but it makes the results better lol
+                    player_stdev[stat] = round(base / dev_mean[0], 3)
+                elif stat == "AST":
+                    base = (player.get(stat) - dev_mean[1]*1.85) 
+                    player_stdev[stat] = round(base / dev_mean[0], 3)
+                elif stat == "TOV":
+                    base = (player.get(stat) - dev_mean[1]*1.75)
+                    player_stdev[stat] = round(base / dev_mean[0], 3)
+                elif stat == "STL":
+                    base = (player.get(stat) - dev_mean[1]*1.7)
+                    player_stdev[stat] = round(base / dev_mean[0], 3)
+                elif stat == "BLK":
+                    base = (player.get(stat) - dev_mean[1]*1.6)
                     player_stdev[stat] = round(base / dev_mean[0], 3)
                 else :
                     player_stdev[stat] = round((player.get(stat) - dev_mean[1]) / dev_mean[0], 5)
@@ -88,11 +118,11 @@ class MathHelper:
             if cat == "BLK" : scalar /= BLK_SCAL
             elif cat == "REB" : scalar /= REB_SCAL
             elif cat == "3PM" : scalar /= TPM_SCAL
-            elif cat == "STL" : scalar /= STL_SCAL
             elif cat == "AST" : scalar /= AST_SCAL
-            elif cat == "TOV" : scalar /= TOV_SCAL
             elif cat == "FG%" : scalar /= FG_SCAL
-            elif cat == "FT%" : scalar *= FT_SCAL
+            elif cat == "FT%" : scalar /= FT_SCAL
+            elif cat == "STL" : scalar *= STL_SCAL
+            elif cat == "TOV" : scalar *= TOV_SCAL
             elif cat == "PTS" : scalar *= PTS_SCAL
             if weights:
                 scalar *= weights[cat] if cat in weights else 1
@@ -106,10 +136,10 @@ class MathHelper:
             total_score += round(score/2,2)
         if pergame:
             player.pg_score_map = score_map
-            player.pg_score_map["OVR"] = round(total_score,2)
+            player.pg_score_map["OVR"] = round(total_score/10,3)
         else:
             player.total_score_map = score_map
-            player.total_score_map["OVR"] = round(total_score,2)
+            player.total_score_map["OVR"] = round(total_score/10,3)
     
     
     #just sums the standard deviations for whatever stats are given
