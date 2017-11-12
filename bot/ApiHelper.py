@@ -148,18 +148,15 @@ class ApiHelper:
         response = self.get(t_url(self.league_id, tid) + "/roster/players", params=params)
         print(response.text)
         players = find_all(ET.fromstring(response.text), './/player')
-        return players
+        roster_players = []
+        for xml_player in players:
+            roster_players.append(RosterPlayer(xml_player))
+        return roster_players
     
     def index_roster(self, tid=None, params={}):
         tid = tid if tid is not None else self.team_id
-        player_map = {}
         players = self.fetch_roster_players(tid, params)
-        for xml_player in players:
-            positions = []
-            for position in find_all(xml_player, './/position'):
-                positions.append(position.text)
-            player_map[find(xml_player, 'player_key').text] = positions
-        healthy_map = {k: v for k, v in player_map.items() if 'IL' not in v}
+        healthy_map = {p.PKEY : p.positions for p in players if not p.injured}
         print(healthy_map)
         
     def fetch_player_stats(self, player_key, params={}):
@@ -219,13 +216,22 @@ class ApiHelper:
             gp = format_stat(stats[0][1].text)
             if gp > 0:
                 all_players.append(Player(xml_player, stats, index+1))
-#                 xml_players[index] = Player(xml_player, stats, index+1)
         return all_players
             
-#     def fetch_all_rosterable_players(self, num_teams, num_ros_spots):
+        #def fetch_all_rosterable_players(self, num_teams, num_ros_spots):
         #should fetch the top players by actual rank
+    
+class RosterPlayer:
+    
+    def __init__(self, player):
+        self.NAME = find(player, 'name')[0].text
+        self.PKEY = find(player, 'player_key').text
+        self.positions = []
+        for position in find(player, 'eligible_positions'):
+            self.positions.append(position.text)
+        self.injured = 'IL' in self.positions
+        self.team_full = find(player, 'editorial_team_full_name').text
         
-    #TODO convenience APIs
 
 class Player:
     '''
@@ -343,8 +349,8 @@ class Player:
 
         
 #testing
-# api = ApiHelper("../auth.json", 136131, 1)
-# api.index_roster()
+api = ApiHelper("../auth.json", 136131, 1)
+api.index_roster()
 
 # for player in api.fetch_players({"status":"ALL", "sort":"AR"}, 150):
 #     player.pretty_print()
