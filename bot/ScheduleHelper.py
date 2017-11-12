@@ -15,6 +15,3 @@ def get_teams_playing_on(date_key):
                 teams.append(row[1])
                 teams.append(row[2])
     return teams
-
-
-

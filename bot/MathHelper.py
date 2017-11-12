@@ -85,13 +85,13 @@ class MathHelper:
                     base = (player.get(stat) - dev_mean[1]*1.8) #the hard-coded scalars here slightly amplify the league average for this cat
                     player_stdev[stat] = round(base / dev_mean[0], 3)
                 elif stat == "PTS":
-                    base = (player.get(stat) - dev_mean[1]*1.85) #idk why but it makes the results better lol
+                    base = (player.get(stat) - dev_mean[1]*1.85) #a smaller scalar means the player's relative "score" will increase, and vice versa
                     player_stdev[stat] = round(base / dev_mean[0], 3)
                 elif stat == "AST":
-                    base = (player.get(stat) - dev_mean[1]*1.85) 
+                    base = (player.get(stat) - dev_mean[1]*1.85) #sort of a coarser control valve in comparison to the scalars applied at the end
                     player_stdev[stat] = round(base / dev_mean[0], 3)
                 elif stat == "TOV":
-                    base = (player.get(stat) - dev_mean[1]*1.75)
+                    base = (player.get(stat) - dev_mean[1]*1.75) #and yes they're all totally arbitrary
                     player_stdev[stat] = round(base / dev_mean[0], 3)
                 elif stat == "STL":
                     base = (player.get(stat) - dev_mean[1]*1.7)
@@ -115,6 +115,7 @@ class MathHelper:
         for cat, stdev in player.pg_stdev_map.items() if pergame else player.total_stdev_map.items():
             #try and weigh the scalar by the relative deviation for this cat
             scalar = 1-(stdev_map[cat][0]/total)
+            #these scalars are just a last step to "polish" the numbers to more closely resemble values for other ranking sites lol im such a hack
             if cat == "BLK" : scalar /= BLK_SCAL
             elif cat == "REB" : scalar /= REB_SCAL
             elif cat == "3PM" : scalar /= TPM_SCAL
@@ -143,6 +144,7 @@ class MathHelper:
     
     
     #just sums the standard deviations for whatever stats are given
+    #indexes: {player_key : score_map}, {player_key : total_score} hmm should I just combine them
     def rank_players(self, players, stats=[], weights={}, pergame=True):
         stats = scoring_cats if not stats else stats
         score_map = {}
@@ -161,7 +163,6 @@ class MathHelper:
             self.pkey_total_score_index = pkey_score_index
         return score_map
     
-    #should index: {player_key : score_map}
     def rank_and_print_players(self, players, stats=[], weights={}, pergame=True, topRank=None):
         topRank = 50 if topRank is None else topRank
         score_map = self.rank_players(players, stats, weights, pergame)

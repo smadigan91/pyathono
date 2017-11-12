@@ -162,9 +162,6 @@ class ApiHelper:
         healthy_map = {k: v for k, v in player_map.items() if 'IL' not in v}
         print(healthy_map)
         
-    
-        
-        
     def fetch_player_stats(self, player_key, params={}):
         response = self.get(p_url(player_key) + "/stats",params=params)
         print(response.text)
@@ -346,8 +343,8 @@ class Player:
 
         
 #testing
-api = ApiHelper("../auth.json", 136131, 1)
-api.index_roster()
+# api = ApiHelper("../auth.json", 136131, 1)
+# api.index_roster()
 
 # for player in api.fetch_players({"status":"ALL", "sort":"AR"}, 150):
 #     player.pretty_print()
