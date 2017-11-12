@@ -1,7 +1,11 @@
 from yahoo_oauth import OAuth2
 import xml.etree.ElementTree as ET
+from collections import defaultdict
+import re
+import ScheduleHelper
+from constraint import *
+from tkinter.constants import CURRENT
 
-#find a better way to do uri templating lol this is gross v
 base_url = "https://fantasysports.yahooapis.com/fantasy/v2"
 
 league_idt = ".l.{lid}"
@@ -153,11 +157,36 @@ class ApiHelper:
             roster_players.append(RosterPlayer(xml_player))
         return roster_players
     
-    def index_roster(self, tid=None, params={}):
+    def fetch_healthy_roster(self, tid=None, params={}):
         tid = tid if tid is not None else self.team_id
         players = self.fetch_roster_players(tid, params)
-        healthy_map = {p.PKEY : p.positions for p in players if not p.injured}
-        print(healthy_map)
+        healthy_players = [p for p in players if not p.injured]
+        return healthy_players
+    
+    def calculate_lineup_combos(self, healthy_players):
+        problem = Problem()
+        #need to iterate through positions, for each position add the pool of eligible players
+        #as a variable (position, eligible_players)
+        #then enforce all different
+        #that...might be it
+        position_map = defaultdict(list)
+        current_position_counts = {}
+        current_roster_positions = []
+        for player in healthy_players:
+            if player.POS not in current_position_counts:
+                current_roster_positions.append(player.POS)
+                current_position_counts[player.POS] = 0
+            else:
+                current_position_counts[player.POS] += 1
+                enumpos = player.POS + str(current_position_counts[player.POS]+1)
+                current_roster_positions.append(enumpos)
+            for pos in player.positions:
+                position_map[pos].append(player.NAME)
+        for position in current_roster_positions:
+            problem.addVariable(position, position_map[re.sub(r'\d+', '', position)])
+        
+        problem.addConstraint(AllDifferentConstraint())
+        print(len(problem.getSolutions()))
         
     def fetch_player_stats(self, player_key, params={}):
         response = self.get(p_url(player_key) + "/stats",params=params)
@@ -226,9 +255,11 @@ class RosterPlayer:
     def __init__(self, player):
         self.NAME = find(player, 'name')[0].text
         self.PKEY = find(player, 'player_key').text
+        self.POS = find(player, 'selected_position')[2].text
         self.positions = []
         for position in find(player, 'eligible_positions'):
             self.positions.append(position.text)
+        self.positions.append('BN')
         self.injured = 'IL' in self.positions
         self.team_full = find(player, 'editorial_team_full_name').text
         
@@ -350,7 +381,8 @@ class Player:
         
 #testing
 api = ApiHelper("../auth.json", 136131, 1)
-api.index_roster()
+healthy_players = api.fetch_healthy_roster()
+api.calculate_lineup_combos(healthy_players)
 
 # for player in api.fetch_players({"status":"ALL", "sort":"AR"}, 150):
 #     player.pretty_print()
