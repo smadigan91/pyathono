@@ -4,7 +4,6 @@ from collections import defaultdict
 import re
 import ScheduleHelper
 from constraint import *
-from tkinter.constants import CURRENT
 
 base_url = "https://fantasysports.yahooapis.com/fantasy/v2"
 
@@ -165,10 +164,6 @@ class ApiHelper:
     
     def calculate_lineup_combos(self, healthy_players):
         problem = Problem()
-        #need to iterate through positions, for each position add the pool of eligible players
-        #as a variable (position, eligible_players)
-        #then enforce all different
-        #that...might be it
         position_map = defaultdict(list)
         current_position_counts = {}
         current_roster_positions = []
@@ -186,7 +181,20 @@ class ApiHelper:
             problem.addVariable(position, position_map[re.sub(r'\d+', '', position)])
         
         problem.addConstraint(AllDifferentConstraint())
-        print(len(problem.getSolutions()))
+        solutions = problem.getSolutions()
+        
+        #for each solution in solutions
+        #sum up the total value (pergame or not - specify) for each non-BN position and assign that lineup a score
+        #put (lineup, score) in a new dict
+        #put that new dict in an OrderedDict, order by value descending
+        #return top n lineups by score
+        
+        #to get the best lineups given today's players:
+        #make sure you calculate the "value" of a player that scores a 0 in every cat for that day
+        #fill each eligible position pool with all players playing that are eligible PLUS the "0" guy
+        #sort same way as above
+        #when assigning the roster, after moving around the players who are actually playing, assign everyone else to the bench (probably easiest)
+        #or I guess just leave everyone else where they were, idk
         
     def fetch_player_stats(self, player_key, params={}):
         response = self.get(p_url(player_key) + "/stats",params=params)
