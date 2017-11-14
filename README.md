@@ -19,6 +19,8 @@ To register your app with yahoo (to get the consumer key/secret) you can go [her
 
 [json](https://dzone.com/articles/python-reading-json-file) - tutorial on using the 'json' library (though it's as easy as you'd think)
 
+[constraint](https://pypi.org/project/python-constraint/) - library that I'm using to solve the "# of unique permissible lineup combos" problem
+
 # Usage
 
 ## Setup
