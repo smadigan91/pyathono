@@ -43,50 +43,64 @@ scoring_cats = [x for x in all_cats if x not in ["AR","NAME","PKEY","GP","3P%","
 #idk why but when using this library this stupid thing is prefixed to each xml tag
 xmlprefix = "{http://fantasysports.yahooapis.com/fantasy/v2/base.rng}"
 
-def l_url(l_id):
+
+def league_url(l_id):
     return base_league_url.format(lid=l_id)
 
-def t_url(l_id, t_id):
+
+def team_url(l_id, t_id):
     return base_team_url.format(lid=l_id, tid=t_id)
 
-def p_url(p_k):
+
+def player_url(p_k):
     return base_player_url + p_k
 
-def ps_url(l_id):
+
+def players_url(l_id):
     return base_league_players_url.format(lid=l_id)
 
-def get_team_idt(self, tid):
-        return team_idt.format(lid=self.league_id, tid=tid)
 
-#xml prefix
-def xmlp(text):
+def get_team_idt(self, tid):
+    return team_idt.format(lid=self.league_id, tid=tid)
+
+
+# xml prefix
+def xml_prefix(text):
     return xmlprefix + text
 
-#xml prefix multilevel
-def xmlp_multi(text):
-        return text.replace('/','/{0}').format(xmlprefix)
-    
+
+# xml prefix multilevel
+def xml_prefix_multi(text):
+    return text.replace('/','/{0}').format(xmlprefix)
+
+
 def find(element, search):
-    return element.find(xmlp(search))
+    return element.find(xml_prefix(search))
+
 
 def find_multi(element, search):
-    return element.find(xmlp_multi(search))
+    return element.find(xml_prefix_multi(search))
+
 
 def find_all(element, search):
     return element.findall(search.replace('//', '//{0}').format(xmlprefix))
+
 
 def ok_get(response):
         code = response.status_code
         if not code is 200:
             raise Exception("status code was {0}".format(code))
         return response
-    
+
+
 #return 0.0 if a % value isn't present
-def format_pct(xml_val, prec):
-        return 0.0 if xml_val is "-" else round(float(xml_val), prec)
-    
+def format_pct(xml_val, precision):
+        return 0.0 if xml_val is "-" else round(float(xml_val), precision)
+
+
 def format_stat(xml_val):
     return 0 if (xml_val is None or xml_val == "-") else int(xml_val)
+
 
 class ApiHelper:
     
@@ -104,7 +118,7 @@ class ApiHelper:
         
     #TODO return convenient data structures
     
-    def default_maxrank(self):
+    def default_max_rank(self):
         return self.l_meta["num_teams"]*self.l_meta["num_pos"]
     
     def get(self, url, params={}):
@@ -115,11 +129,11 @@ class ApiHelper:
     '''
     
     def fetch_league(self):
-        response = self.get(l_url(self.league_id))
+        response = self.get(league_url(self.league_id))
         print(response.text)
         
     def index_league_metadata(self):
-        response = self.get(l_url(self.league_id) + "/settings")
+        response = self.get(league_url(self.league_id) + "/settings")
         league_settings = ET.fromstring(response.text)
         self.l_meta["num_teams"] = int(find_multi(league_settings, './league/num_teams').text)
         for roster_position in find_multi(league_settings, './league/settings/roster_positions'):
@@ -129,16 +143,15 @@ class ApiHelper:
     '''
     TEAM
     '''
-        
-    
-    def fetch_team(self, tid=None, params={}):
+
+    def fetch_team(self, tid=None, params=None):
         tid = tid if tid is not None else self.team_id
-        response = self.get(t_url(self.league_id, tid), params=params)
+        response = self.get(team_url(self.league_id, tid), params=params)
         print(response.text)
         
-    def fetch_roster(self, tid=None, params={}):
+    def fetch_roster(self, tid=None, params=None):
         tid = tid if tid is not None else self.team_id
-        response = self.get(t_url(self.league_id, tid) + "/roster", params=params)
+        response = self.get(team_url(self.league_id, tid) + "/roster", params=params)
         print(response.text)
     
     '''
@@ -146,9 +159,9 @@ class ApiHelper:
     '''
     
     # map of {player_name : player_key}
-    def fetch_roster_players(self, tid=None, params={}):
+    def fetch_roster_players(self, tid=None, params=None):
         tid = tid if tid is not None else self.team_id
-        response = self.get(t_url(self.league_id, tid) + "/roster/players", params=params)
+        response = self.get(team_url(self.league_id, tid) + "/roster/players", params=params)
         print(response.text)
         players = find_all(ET.fromstring(response.text), './/player')
         roster_players = []
@@ -156,7 +169,7 @@ class ApiHelper:
             roster_players.append(RosterPlayer(xml_player))
         return roster_players
     
-    def fetch_healthy_roster(self, tid=None, params={}):
+    def fetch_healthy_roster(self, tid=None, params=None):
         tid = tid if tid is not None else self.team_id
         players = self.fetch_roster_players(tid, params)
         healthy_players = [p for p in players if not p.injured]
@@ -184,7 +197,7 @@ class ApiHelper:
         solutions = problem.getSolutions()
         
         #for each solution in solutions
-        #sum up the total value (pergame or not - specify) for each non-BN position and assign that lineup a score
+        #sum up the total value (per_game or not - specify) for each non-BN position and assign that lineup a score
         #put (lineup, score) in a new dict
         #put that new dict in an OrderedDict, order by value descending
         #return top n lineups by score
@@ -197,11 +210,11 @@ class ApiHelper:
         #or I guess just leave everyone else where they were, idk
         
     def fetch_player_stats(self, player_key, params={}):
-        response = self.get(p_url(player_key) + "/stats",params=params)
+        response = self.get(player_url(player_key) + "/stats", params=params)
         print(response.text)
         
     def fetch_player_stats_by_season(self, player_key, season, params={}):
-        response = self.get(p_url(player_key) + "/stats;type=season;season={0}".format(season),params=params)
+        response = self.get(player_url(player_key) + "/stats;type=season;season={0}".format(season), params=params)
         print(response.text)
         
     def fetch_players_stats(self, player_keys = []):
@@ -223,10 +236,10 @@ class ApiHelper:
     within the league context, index their player ids, and then re-fetch all of them outside of the
     league context which is where advanced stats can be found.
     '''
-    def fetch_players(self, params = {}, count=None):
+    def fetch_players(self, params={}, count=None):
         start = 0
-        count = count if (count is not None or count <=1) else 25
-        url = ps_url(self.league_id) + "start={0};count={1};"
+        count = count if (count <= 1 or count is None) else 25
+        url = players_url(self.league_id) + "start={0};count={1};"
         players = []
         for k, v in params.items():
             url += k + "=" + str(v) + ";"
@@ -254,10 +267,8 @@ class ApiHelper:
             if gp > 0:
                 all_players.append(Player(xml_player, stats, index+1))
         return all_players
-            
-        #def fetch_all_rosterable_players(self, num_teams, num_ros_spots):
-        #should fetch the top players by actual rank
-    
+
+
 class RosterPlayer:
     
     def __init__(self, player):
@@ -329,18 +340,18 @@ class Player:
             }
         self.pg_stats = {k: (self.div_gp(v) if self.total_stats["GP"] > 0 else 0) for k, v in self.total_stats.items() if k in scoring_cats}
         self.total_stdev_map = {} #raw
-        self.total_score_map = {"OVR":0} #weighted
+        self.total_score_map = {"OVR": 0} #weighted
         self.pg_stdev_map = {}
-        self.pg_score_map = {"OVR":0} #weighted
+        self.pg_score_map = {"OVR": 0} #weighted
         
     def get(self, stat):
         return self.total_stats[stat]
     
-    def get_score(self, pergame=True):
-        return self.pg_score_map["OVR"] if pergame else self.total_score_map["OVR"]
+    def get_score(self, per_game=True):
+        return self.pg_score_map["OVR"] if per_game else self.total_score_map["OVR"]
     
-    def get_score_map(self, pergame=True):
-        return self.pg_score_map if pergame else self.total_score_map
+    def get_score_map(self, per_game=True):
+        return self.pg_score_map if per_game else self.total_score_map
     
     def get_stats(self, stats=[]):
         results = {}
@@ -350,15 +361,14 @@ class Player:
     def get_pg_stat(self, stat):
         return self.pg_stats[stat]
     
-    def get_pg_stats(self, stats = []):
+    def get_pg_stats(self, stats=[]):
         return {k:v for k, v in self.pg_stats.items() if k in stats}
     
     def get_total_stats(self):
         return {k:v for k, v in self.total_stats.items() if k in scoring_cats}
     
-    def get_scored_stats(self, omit, weights=[], pergame=True):
-        score_map = {}
-        if pergame:
+    def get_scored_stats(self, omit, weights=[], per_game=True):
+        if per_game:
             if not self.pg_score_map:
                 score_map = {k:v for k, v in self.pg_stdev_map.items() if k not in omit}
             else:
@@ -375,22 +385,21 @@ class Player:
                 else:
                     score_map = {k:v for k, v in self.total_score_map.items() if k in weights}
         return {k:v for k, v in score_map.items()}
-        
-    
+
     def div_gp(self, stat, prec=3):
         return round(float(stat / self.total_stats["GP"]),prec) if isinstance(stat, int) else stat
         
     def pretty_print(self, stat_map, rank=None): 
         print(((str(rank) + " ") if rank is not None else "") + ("("+str(self.get("AR"))+") " + self.get("NAME") + ", ") + (', '.join("%s: %s" % item for item in stat_map.items())))
 
-    def pretty_print_rank_name_only(self, rank=None, pergame=True):
-        print(((str(rank) + " ") if rank is not None else "") + ("("+str(self.get("AR"))+") " + self.get("NAME") + ", ") + ("" if self.get_score(pergame) == 0 else ("OVR: " + str(self.get_score(pergame)))))
+    def pretty_print_rank_name_only(self, rank=None, per_game=True):
+        print(((str(rank) + " ") if rank is not None else "") + ("("+str(self.get("AR"))+") " + self.get("NAME") + ", ") + ("" if self.get_score(per_game) == 0 else ("OVR: " + str(self.get_score(per_game)))))
 
         
 #testing
-api = ApiHelper("../auth.json", 136131, 1)
-healthy_players = api.fetch_healthy_roster()
-api.calculate_lineup_combos(healthy_players)
+# api = ApiHelper("../auth.json", 136131, 1)
+# current_healthy_players = api.fetch_healthy_roster()
+# api.calculate_lineup_combos(current_healthy_players)
 
 # for player in api.fetch_players({"status":"ALL", "sort":"AR"}, 150):
 #     player.pretty_print()

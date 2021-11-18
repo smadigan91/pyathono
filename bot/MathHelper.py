@@ -32,11 +32,11 @@ class MathHelper:
         
     #calculate the standard deviation for a given set of players / set of stats
     #uses all of a particular kind of category by default
-    def all_player_stdev(self, players, stats=[], pergame=True):
+    def all_player_stdev(self, players, stats=[], per_game=True):
         stdv_mean_map = defaultdict(list)
         for player in players : 
             for stat in stats if stats else scoring_cats:
-                if pergame :
+                if per_game :
                     if stat in ["FG%","FT%"]: stdv_mean_map[stat].append(player.get(stat))
                     else: stdv_mean_map[stat].append(player.get_pg_stat(stat))
                 else: stdv_mean_map[stat].append(player.get(stat))
@@ -44,10 +44,10 @@ class MathHelper:
             stdv_mean_map[stat] = [round(stdev(data),5),round(mean(data),5)]
         return stdv_mean_map #for each stat, a tuple of the standard deviation and mean for the entire league
     
-    def rel_stdev(self, player, stdv_mean_map, pergame=True):
+    def rel_stdev(self, player, stdv_mean_map, per_game=True):
         player_stdev = defaultdict(list)
         for stat, dev_mean in stdv_mean_map.items():
-            if pergame:
+            if per_game:
                 if stat == "FG%":
                     base = (player.get(stat) - ideal_FGP)
                     player_stdev[stat] = round(base * player.get_pg_stat("FGA") * 1.7,5)
@@ -101,18 +101,18 @@ class MathHelper:
                     player_stdev[stat] = round(base / dev_mean[0], 3)
                 else :
                     player_stdev[stat] = round((player.get(stat) - dev_mean[1]) / dev_mean[0], 5)
-        if pergame: player.pg_stdev_map = player_stdev #map of player stat cats to  player standard deviation relative to league per cat
+        if per_game: player.pg_stdev_map = player_stdev #map of player stat cats to  player standard deviation relative to league per cat
         else: player.total_stdev_map = player_stdev
     
     def simple_eval_player(self, player, stats=[]):
         player.score = round(sum([val for key, val in player.stdev_map.items() if key not in util_cats]) - round(2*player.stdev_map["TOV"],3) if "TOV" in stats else 0, 5)
     
-    def weighted_eval_player(self, player, stdev_map, pergame=True, stats=[], weights={}):
+    def weighted_eval_player(self, player, stdev_map, per_game=True, stats=[], weights={}):
         stats = stats if not stats else scoring_cats
         total_score = 0
         score_map = {}
         total = sum(x[0] for x in {k:v for k, v in stdev_map.items() if k not in util_cats}.values())
-        for cat, stdev in player.pg_stdev_map.items() if pergame else player.total_stdev_map.items():
+        for cat, stdev in player.pg_stdev_map.items() if per_game else player.total_stdev_map.items():
             #try and weigh the scalar by the relative deviation for this cat
             scalar = 1-(stdev_map[cat][0]/total)
             #these scalars are just a last step to "polish" the numbers to more closely resemble values for other ranking sites lol im such a hack
@@ -135,7 +135,7 @@ class MathHelper:
             if cat == "TOV" : score = score*-1
             score_map[cat] = round(score/2,2)
             total_score += round(score/2,2)
-        if pergame:
+        if per_game:
             player.pg_score_map = score_map
             player.pg_score_map["OVR"] = round(total_score/10,3)
         else:
@@ -145,17 +145,17 @@ class MathHelper:
     
     #just sums the standard deviations for whatever stats are given
     #indexes: {player_key : score_map}, {player_key : total_score} hmm should I just combine them
-    def rank_players(self, players, stats=[], weights={}, pergame=True):
+    def rank_players(self, players, stats=[], weights={}, per_game=True):
         stats = scoring_cats if not stats else stats
         score_map = {}
-        stdev_map = self.all_player_stdev(players, stats, pergame)
+        stdev_map = self.all_player_stdev(players, stats, per_game)
         for player in players:
-            self.rel_stdev(player, stdev_map, pergame)
-            self.weighted_eval_player(player, stdev_map, pergame, stats, weights)
-            score_map[player] = player.get_score(pergame)
+            self.rel_stdev(player, stdev_map, per_game)
+            self.weighted_eval_player(player, stdev_map, per_game, stats, weights)
+            score_map[player] = player.get_score(per_game)
         score_map = OrderedDict(sorted(score_map.items(), key=operator.itemgetter(1), reverse=True))
         pkey_score_index = {k.get("PKEY") : v for k, v in score_map.items()}
-        if pergame:
+        if per_game:
             self.player_pg_score_index = score_map
             self.pkey_pg_score_index = pkey_score_index
         else:
@@ -163,16 +163,16 @@ class MathHelper:
             self.pkey_total_score_index = pkey_score_index
         return score_map
     
-    def rank_and_print_players(self, players, stats=[], weights={}, pergame=True, topRank=None):
-        topRank = 50 if topRank is None else topRank
-        score_map = self.rank_players(players, stats, weights, pergame)
-        self.pretty_print_player_map(score_map, topRank, pergame) # return something eventually
+    def rank_and_print_players(self, players, stats=[], weights={}, per_game=True, top_rank=None):
+        top_rank = 50 if top_rank is None else top_rank
+        score_map = self.rank_players(players, stats, weights, per_game)
+        self.pretty_print_player_map(score_map, top_rank, per_game) # return something eventually
         
         
-    def pretty_print_player_map(self, player_map, top, pergame=True):
+    def pretty_print_player_map(self, player_map, top, per_game=True):
         rank=0
         for player in player_map.keys() :
             rank+=1
-            player.pretty_print(player.pg_score_map if pergame else player.total_score_map, rank)
+            player.pretty_print(player.pg_score_map if per_game else player.total_score_map, rank)
     #         player.pretty_print_rank_name_only(rank)
             if rank == top: break
